@@ -261,42 +261,42 @@ public class RNEsptouchModule extends ReactContextBaseJavaModule implements Life
 
     /* 处理wifi变化 */
     private void onWifiChanged(WifiInfo info) {
-        boolean disconnected = info == null
-                || info.getNetworkId() == -1
-                || "<unknown ssid>".equals(info.getSSID());
-        if (disconnected) { // 未连接WIFI
-            Log.i("RNEsptouchModule","No Wifi connection");
-            mSSID = "";
-            mBSSID = "";
-            isWifiConnected = false;
-            if (isSDKAtLeastP()) {
-                //checkLocation();
-            }
+        // boolean disconnected = info == null
+        //         || info.getNetworkId() == -1
+        //         || "<unknown ssid>".equals(info.getSSID());
+        // if (disconnected) { // 未连接WIFI
+        //     Log.i("RNEsptouchModule","No Wifi connection");
+        //     mSSID = "";
+        //     mBSSID = "";
+        //     isWifiConnected = false;
+        //     if (isSDKAtLeastP()) {
+        //         //checkLocation();
+        //     }
 
-            if (mTask != null) { // 配置时wifi中断
-                mTask.cancelEsptouch();
-                mTask = null;
-                respondToRN(-3, "no Wifi connection");
-            }
-        } else { // 已连接WIFI
-            isWifiConnected = true;
-            mSSID = info.getSSID();
-            if (mSSID.startsWith("\"") && mSSID.endsWith("\"")) {
-                mSSID = mSSID.substring(1, mSSID.length() - 1);
-            }
-            mBSSID = info.getBSSID();
+        //     if (mTask != null) { // 配置时wifi中断
+        //         mTask.cancelEsptouch();
+        //         mTask = null;
+        //         respondToRN(-3, "no Wifi connection");
+        //     }
+        // } else { // 已连接WIFI
+        //     isWifiConnected = true;
+        //     mSSID = info.getSSID();
+        //     if (mSSID.startsWith("\"") && mSSID.endsWith("\"")) {
+        //         mSSID = mSSID.substring(1, mSSID.length() - 1);
+        //     }
+        //     mBSSID = info.getBSSID();
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                int frequency = info.getFrequency();
-                if (frequency > 4900 && frequency < 5900) {
-                    // Connected 5G wifi. Device does not support 5G
-                    Log.i("RNEsptouchModule","Connected 5G wifi. Device does not support 5G");
-                    is5GWifi = true;
-                } else {
-                    is5GWifi = false;
-                }
-            }
-        }
+        //     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        //         int frequency = info.getFrequency();
+        //         if (frequency > 4900 && frequency < 5900) {
+        //             // Connected 5G wifi. Device does not support 5G
+        //             Log.i("RNEsptouchModule","Connected 5G wifi. Device does not support 5G");
+        //             is5GWifi = true;
+        //         } else {
+        //             is5GWifi = false;
+        //         }
+        //     }
+        // }
     }
 
     /* 检查是否开启了位置权限 */
