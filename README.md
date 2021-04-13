@@ -53,7 +53,7 @@ My recommendations:
 
 `expo-location`
 
-## Usage
+## Updated Usage (React Hooks)
 ```javascript
 
 import React, {
