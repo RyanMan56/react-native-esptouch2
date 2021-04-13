@@ -1,6 +1,8 @@
 
 # react-native-esptouch2
 
+## This fork adds `RNEspTouch.startSmartConfigWithSSID` support for iOS, and provides updated usage descriptions with React Hooks
+
 ## One should know that
 This is a Unofficial project. The official demo is below:
 
