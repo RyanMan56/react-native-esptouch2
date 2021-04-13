@@ -14,7 +14,9 @@ This is a Unofficial project. The official demo is below:
 
 ### Mostly automatic installation
 
-`$ react-native link react-native-esptouch2`
+~~`$ react-native link react-native-esptouch2`~~
+
+This should be handled automatically since React Native 0.60
 
 ### Manual installation
 
@@ -43,87 +45,82 @@ This is a Unofficial project. The official demo is below:
 
 
 ## Additional react native modules needed for getting location service permission
-react-native-permissions
-react-native-android-location-service
+Any libraries that can get the device's Location and Network information.
+
+My recommendations:
+
+`react-native-network-info`
+
+`expo-location`
 
 ## Usage
 ```javascript
 
-import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, Button, View, DeviceEventEmitter} from 'react-native';
-import RNEsptouch from 'react-native-esptouch2';
-import Permissions from 'react-native-permissions';
-import RNAndroidLocationService from 'react-native-android-location-service';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+import RNEspTouch from 'react-native-esptouch2';
+import * as Location from 'expo-location';
+import { NetworkInfo } from 'react-native-network-info';
 
-export default class App extends Component {
-    constructor(props) {
-        super(props);
-        this.onPress = this.onPress.bind(this);
-    }
-    state = {
-        lng: 0.0,
-        lat: 0.0,
+function SmartConfiguration() {
+  const [location, setLocation] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [ssid, setSsid] = useState(null);
+  const [bssid, setBssid] = useState(null);
+  const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
+
+      const _location = await Location.getCurrentPositionAsync({});
+      setLocation(_location);
+
+      const _ssid = await NetworkInfo.getSSID();
+      const _bssid = await NetworkInfo.getBSSID();
+
+      setSsid(_ssid);
+      setBssid(_bssid);
+
+      RNEspTouch.initESPTouch();
+
+      const password = 'password';
+      const _result = await RNEspTouch.startSmartConfigWithSSID(
+        _ssid,
+        _bssid,
+        password,
+        1
+      );
+      setResult(_result);
+    })();
+    return function cleanup() {
+      RNEspTouch.finish();
     };
-
-    //request permission to access location
-    requestPermission = () => {
-        Permissions.request('location')
-            .then(response => {
-                //returns once the user has chosen to 'allow' or to 'not allow' access
-                //response is one of: 'authorized', 'denied', 'restricted', or 'undetermined'
-                this.setState({ locationPermission: response })
-            });
-    };
-
-    onLocationChange(e) {
-        this.setState({
-            lng: e.Longitude,
-            lat: e.Latitude
-        });
-    }
-
-    componentDidMount() {
-        this.requestPermission();
-        if (!this.eventEmitter) {
-            // Register Listener Callback - has to be removed later
-            this.eventEmitter = DeviceEventEmitter.addListener('updateLocation', this.onLocationChange.bind(this));
-            // Initialize RNGLocation
-            if (Platform.OS === 'android') {
-                RNAndroidLocationService.getLocation();
-            }
-        }
-        RNEsptouch.initESPTouch();
-    }
-
-    componentWillUnmount() {
-        // Stop listening for Events
-        this.eventEmitter.remove();
-
-        RNEsptouch.finish();
-    }
-
-    onPress() {
-        let connected_wifi_password = "12345678";
-        let broadcast_type = 1;	// 1: broadcast;	0: multicast
-        RNEsptouch.startSmartConfig(connected_wifi_password, broadcast_type).then((res) => {
-            if (res.code == 200) {
-                // ESPTouch success
-                console.log(res)
-            } else {
-                // ESPTouch failed
-                console.info(res.msg)
-            }
-        })
-    }
-
-    render() {
-        return (
-            <View>
-                <Text>Lng: {this.state.lng} Lat: {this.state.lat}</Text>
-                <Button title="test" onPress={this.onPress} />
-            </View>
-        )
-    }
+  }, []);
+  
+  if (errorMsg) {
+    return (
+      <View>
+        <Text>{errorMsg}</Text>
+      </View>
+    );
+  }
+  
+  return (
+    <View>
+      {!result ? (
+        <Text>Configuring...</Text>
+      ) : (
+        <Text>{result.code === 200 ? 'Success!' : 'Failed'}</Text>      
+      )}
+    </View>
+  );
 }
 
 ```
