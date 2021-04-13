@@ -88,6 +88,63 @@
     });
 }
 
+- (void) startSmartConfigWithSSID: (NSString *)apSsid
+                                    bssid:(NSString *)apBssid
+                                    password:(NSString *)apPwd
+                                    broadcastType:(NSNumber *)type
+                                    resolver: (RCTPromiseResolveBlock)resolve
+{
+    int taskCount = 1;
+    BOOL broadcast = [type intValue] == 1 ? YES : NO; // 1: broadcast  0:  multicast
+    
+    RCTLog(@"ssid======>%@", apSsid);
+    RCTLog(@"apBssid======>%@", apBssid);
+    RCTLog(@"apPwd======>%@", apPwd);
+    RCTLog(@"taskCount======>%d", taskCount);
+    RCTLog(@"broadcast======>%@", broadcast ? @"broadcast" : @"multicast");
+    
+    if (apSsid == nil || apSsid == NULL) {
+        RCTLog(@"======>no Wifi connection");
+        NSDictionary *res = @{@"code":@"-3",@"msg":@"no Wifi connection"};
+        resolve(res);
+        return;
+    }
+    
+    RCTLog(@"ESPTouch smartConfig...");
+    dispatch_queue_t  queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    dispatch_async(queue, ^{
+        RCTLog(@"ESPTouch do the execute work...");
+        // execute the task
+        NSArray *esptouchResultArray = [self executeForResultsWithSsid:apSsid bssid:apBssid password:apPwd taskCount:taskCount broadcast:broadcast];
+        // show the result to the user in UI Main Thread
+        dispatch_async(dispatch_get_main_queue(), ^{
+            ESPTouchResult *firstResult = [esptouchResultArray objectAtIndex:0];
+            // check whether the task is cancelled and no results received
+            if (!firstResult.isCancelled)
+            {
+                if ([firstResult isSuc])
+                {   // 配网成功
+                    RCTLog(@"======>ESPTouch success");
+                    NSString *ipAddrDataStr = [ESP_NetUtil descriptionInetAddr4ByData:firstResult.ipAddrData];
+                    if (ipAddrDataStr==nil) {
+                        ipAddrDataStr = [ESP_NetUtil descriptionInetAddr6ByData:firstResult.ipAddrData];
+                    }
+                    NSDictionary *res = @{@"code":@"200",@"msg":@"ESPTouch success",@"bssid":firstResult.bssid,@"ip":ipAddrDataStr};
+                    resolve(res);
+                }
+                
+                else
+                {   // 配网失败
+                   RCTLog(@"======>ESPTouch fail");
+                    NSDictionary *res = @{@"code":@"0",@"msg":@"ESPTouch fail"};
+                    resolve(res);
+                }
+            }
+            
+        });
+    });
+}
+
 // 取消配置任务
 - (void) cancel
 {
@@ -175,6 +232,20 @@ RCT_REMAP_METHOD(startSmartConfig,
         self.helper = [[ESPTouchHelper alloc] init];
     }
     [self.helper startSmartConfig:pwd broadcastType:type resolver: resolve];
+}
+
+RCT_REMAP_METHOD(startSmartConfigWithSSID,
+                  ssid: (NSString *)apSsid
+                  bssid:(NSString *)apBssid
+                  password: (NSString *)pwd
+                  broadcastType: (nonnull NSNumber *) type
+                  resolver: (RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    if (self.helper == nil) {
+        self.helper = [[ESPTouchHelper alloc] init];
+    }
+    [self.helper startSmartConfigWithSSID:apSsid bssid:apBssid password:pwd broadcastType:type resolver: resolve];
 }
 
 RCT_REMAP_METHOD(getNetInfo,
