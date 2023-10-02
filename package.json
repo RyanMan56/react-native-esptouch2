@@ -18,7 +18,7 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "react-native": "^0.41.2"
+    "react-native": "^0.72.5"
   },
   "repository": {
     "type": "git",
